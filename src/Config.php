@@ -1,6 +1,7 @@
 <?php
+declare(strict_types = 1);
 
-namespace SubTech\Utility;
+namespace AllenJB\Utilities;
 
 class Config
 {
@@ -12,19 +13,19 @@ class Config
     protected $config = [];
 
 
-    public function __construct($configDir, $configName)
+    public function __construct(string $configDir, string $configName)
     {
         $this->dir = realpath($configDir) . '/';
         $this->name = $configName;
 
-        $this->config = $this->getConfig();
+        $this->config = $this->getConfig('');
         if (defined('ENVIRONMENT')) {
             $this->config = array_merge($this->config, $this->getConfig(ENVIRONMENT));
         }
     }
 
 
-    private function getConfig($environment = '')
+    private function getConfig(string $environment) : array
     {
         $path = $this->dir . $environment . '/' . $this->name . '.php';
         if (! (file_exists($path) && is_readable($path))) {
@@ -38,7 +39,7 @@ class Config
     }
 
 
-    public function get($key)
+    public function get(string $key)
     {
         if (! array_key_exists($key, $this->config)) {
             throw new \InvalidArgumentException("No config entry exists with key: {$key} in {$this->name}");
@@ -47,7 +48,7 @@ class Config
     }
 
 
-    public function all()
+    public function all() : array
     {
         return $this->config;
     }

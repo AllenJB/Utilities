@@ -1,11 +1,10 @@
 <?php
+declare(strict_types = 1);
 
-namespace SubTech\Utility;
+namespace AllenJB\Utilities;
 
 /**
  * Utility class to aid reporting of iteration tasks (speed / progress)
- *
- * @package SubTech\Utility
  */
 class IteratorGauge
 {
@@ -28,7 +27,7 @@ class IteratorGauge
     }
 
 
-    public function incrementLineNo($by = 1)
+    public function incrementLineNo($by = 1) : int
     {
         $this->lineNo += $by;
 
@@ -36,25 +35,25 @@ class IteratorGauge
     }
 
 
-    public function setLineCount($count)
+    public function setLineCount($count) : void
     {
         $this->lineCount = $count;
     }
 
 
-    public function getLineNo()
+    public function getLineNo() : int
     {
         return $this->lineNo;
     }
 
 
-    public function getLineCount()
+    public function getLineCount() : ?int
     {
         return $this->lineCount;
     }
 
 
-    public function getPercentage($dp = 2)
+    public function getPercentage($dp = 2) : string
     {
         if ($this->lineCount < 1) {
             return number_format(0, $dp) . '%';
@@ -63,7 +62,7 @@ class IteratorGauge
     }
 
 
-    public function getSpeed()
+    public function getSpeed() : string
     {
         $elapsed = time() - $this->tsStart;
         $lpm = (($elapsed > 0) ? ($this->lineNo / $elapsed) * 60 : 0);
@@ -71,19 +70,19 @@ class IteratorGauge
     }
 
 
-    public function getElapsedTime($includeSeconds = false)
+    public function getElapsedTime($includeSeconds = false) : string
     {
         $elapsed = time() - $this->tsStart;
         $secs = $elapsed % 60;
-        $secs = str_pad($secs, 2, '0', STR_PAD_LEFT);
+        $secs = str_pad("". $secs, 2, '0', STR_PAD_LEFT);
         $mins = floor(($elapsed / 60) % 60);
-        $mins = str_pad($mins, 2, '0', STR_PAD_LEFT);
+        $mins = str_pad("". $mins, 2, '0', STR_PAD_LEFT);
         $hours = floor($elapsed / 3600);
         return "{$hours}h {$mins}m" . ($includeSeconds ? " {$secs}s" : '');
     }
 
 
-    public function getRemainingTime()
+    public function getRemainingTime() : string
     {
         if ($this->lineCount < 1) {
             return "unknown";
@@ -104,7 +103,7 @@ class IteratorGauge
 
         $hours = floor($timeRemaining / 60);
         $mins = $timeRemaining % 60;
-        $mins = str_pad($mins, 2, '0', STR_PAD_LEFT);
+        $mins = str_pad("". $mins, 2, '0', STR_PAD_LEFT);
 
         return "{$hours}h {$mins}m";
     }
@@ -115,14 +114,13 @@ class IteratorGauge
      *
      * @return string
      */
-    public function getProgressText()
+    public function getProgressText() : string
     {
         if ($this->lineCount < 1) {
             return number_format($this->getLineNo()) . ' / ?';
         }
-        return number_format($this->getLineNo()) . ' / ' . number_format(
-            $this->getLineCount()
-        ) . " = {$this->getPercentage()}";
+        return number_format($this->getLineNo()) . ' / '
+            . number_format($this->getLineCount()) . " = {$this->getPercentage()}";
     }
 
 
@@ -131,9 +129,10 @@ class IteratorGauge
      *
      * @return string
      */
-    public function getStatusText()
+    public function getStatusText() : string
     {
-        return "Time: {$this->getElapsedTime()} :: Speed: {$this->getSpeed(
-        )} :: ETC: {$this->getRemainingTime()}";
+        return "Time: {$this->getElapsedTime()} :: Speed: "
+            . $this->getSpeed() ." :: ETC: {$this->getRemainingTime()}";
     }
+
 }
