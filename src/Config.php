@@ -1,6 +1,6 @@
 <?php
 
-namespace SubTech\Utility;
+namespace AllenJB\Utilities;
 
 class Config
 {

@@ -1,6 +1,6 @@
 <?php
 
-namespace SubTech\Utility;
+namespace AllenJB\Utilities;
 
 /**
  * Provide PCRE regular expressions handling that throws exceptions
@@ -8,24 +8,24 @@ namespace SubTech\Utility;
 class Regex
 {
 
-    public static function match($search, $subject)
+    public static function match($search, $subject, &$matches = [])
     {
         $prevErrLevel = error_reporting(E_ALL);
         $lastPhpError = error_get_last();
-        $test = @preg_match($search, $subject);
+        $test = @preg_match($search, $subject, $matches);
         $thisPhpError = error_get_last();
         error_reporting($prevErrLevel);
 
-        if (($thisPhpError !== null) && (serialize($lastPhpError) != serialize($thisPhpError))) {
+        if (($thisPhpError !== null) && (serialize($lastPhpError) !== serialize($thisPhpError))) {
             throw new \InvalidArgumentException($thisPhpError['message']);
-        } else {
-            $lastError = static::lastErrorMsg();
-            if ($lastError !== null) {
-                throw new \InvalidArgumentException($lastError);
-            }
-            if ($test === false) {
-                throw new \InvalidArgumentException("Regular expression failed for an unknown reason");
-            }
+        }
+
+        $lastError = static::lastErrorMsg();
+        if ($lastError !== null) {
+            throw new \InvalidArgumentException($lastError);
+        }
+        if ($test === false) {
+            throw new \InvalidArgumentException("Regular expression failed for an unknown reason");
         }
 
         return $test;
@@ -40,16 +40,16 @@ class Regex
         $thisPhpError = error_get_last();
         error_reporting($prevErrLevel);
 
-        if (($thisPhpError !== null) && (serialize($lastPhpError) != serialize($thisPhpError))) {
+        if (($thisPhpError !== null) && (serialize($lastPhpError) !== serialize($thisPhpError))) {
             throw new \InvalidArgumentException($thisPhpError['message']);
-        } else {
-            $lastError = static::lastErrorMsg();
-            if ($lastError !== null) {
-                throw new \InvalidArgumentException($lastError);
-            }
-            if ($test === false) {
-                throw new \InvalidArgumentException("Regular expression failed for an unknown reason");
-            }
+        }
+
+        $lastError = static::lastErrorMsg();
+        if ($lastError !== null) {
+            throw new \InvalidArgumentException($lastError);
+        }
+        if ($test === false) {
+            throw new \InvalidArgumentException("Regular expression failed for an unknown reason");
         }
 
         return $test;

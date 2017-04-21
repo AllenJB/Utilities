@@ -1,6 +1,6 @@
 <?php
 
-namespace SubTech\Utility;
+namespace AllenJB\Utilities;
 
 class Json {
 
@@ -13,7 +13,7 @@ class Json {
                 $msg .= ': '. json_last_error_msg();
             }
 
-            throw new \Exception($msg, json_last_error());
+            throw new \InvalidArgumentException($msg, json_last_error());
         }
 
         return $retval;
@@ -23,7 +23,7 @@ class Json {
     public static function decode($value, $assoc = FALSE) {
         $retval = json_decode($value, $assoc);
 
-        if (json_last_error() != JSON_ERROR_NONE) {
+        if (json_last_error() !== JSON_ERROR_NONE) {
             $msg = "Failed to decode JSON";
             if (function_exists('json_last_error_msg')) {
                 $msg .= ': '. json_last_error_msg();
@@ -31,7 +31,7 @@ class Json {
                 $msg .= ': Error code '. json_last_error();
             }
 
-            throw new \Exception($msg, json_last_error());
+            throw new \InvalidArgumentException($msg, json_last_error());
         }
 
         return $retval;

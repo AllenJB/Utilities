@@ -1,6 +1,6 @@
 <?php
 
-namespace SubTech\Utility;
+namespace AllenJB\Utilities;
 
 /**
  * Utility class to aid reporting of iteration tasks (speed / progress)
