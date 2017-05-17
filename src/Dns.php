@@ -12,7 +12,7 @@ class Dns
 
     public static function isValidIP4($value)
     {
-        if (substr_count($value, '.') !== 4) {
+        if (substr_count($value, '.') !== 3) {
             return false;
         }
 
