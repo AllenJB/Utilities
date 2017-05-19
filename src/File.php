@@ -19,10 +19,19 @@ class File
     }
 
 
-    public static function human2bytes(string $val) : int
+    public static function human2bytes(string $val) : float
     {
         $val = trim($val);
+        if (!preg_match('/^[0-9]+[gmk]?$/i', $val)) {
+            throw new \InvalidArgumentException("Invalid ini-style numeric value: {$val}");
+        }
+
         $last = strtolower($val[strlen($val) - 1]);
+        if (preg_match('/^[gmk]$/', $last)) {
+            $val = substr($val, 0, -1);
+        }
+        $val = (float) $val;
+
         switch ($last) {
             case 'g':
                 $val *= 1024;
@@ -36,7 +45,7 @@ class File
     }
 
 
-    public static function bytes2human(?int $val) : ?string
+    public static function bytes2human(?float $val) : ?string
     {
         if ($val === null) {
             return null;
@@ -48,7 +57,10 @@ class File
         if ($val < (1024 * 1024)) {
             return number_format($val / 1024) . ' KB';
         }
-        return number_format($val / (1024 * 1024)) . ' MB';
+        if ($val < (1024 * 1024 * 1024)) {
+            return number_format( $val / (1024 * 1024)) .' MB';
+        }
+        return number_format($val / (1024 * 1024 * 1024)) . ' GB';
     }
 
 
@@ -56,7 +68,7 @@ class File
      * Returns the maximum file upload size (taking both upload_max_filesize and post_max_size into account) in bytes.
      * @return int
      */
-    public static function getUploadMaxFilesize() : int
+    public static function getUploadMaxFilesize() : float
     {
         $file = static::human2bytes(ini_get('upload_max_filesize'));
         $post = static::human2bytes(ini_get('post_max_size'));

@@ -17,7 +17,11 @@ class Dns
             return false;
         }
 
-        return (long2ip(ip2long($value)) === $value);
+        if ($value === '0.0.0.0') {
+            return false;
+        }
+
+        return (filter_var($value, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false);
     }
 
 
@@ -27,7 +31,11 @@ class Dns
             return false;
         }
 
-        return (inet_ntop(inet_pton($value)) === $value);
+        if ($value === '::') {
+            return false;
+        }
+
+        return (filter_var($value, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) !== false);
     }
 
 
@@ -51,55 +59,21 @@ class Dns
      */
     public static function isReservedIp(string $target) : bool
     {
-        // Localhost or broadcast addresses quick check
-        if (($target === '127.0.0.1') || ($target === '::1') || ($target === '255.255.255.255')) {
-            return true;
-        }
-
-        // IPv6
         // TODO Handle IPv6 reserved addresses correctly
-        if (strpos($target, ':') !== false) {
+        // Localhost or broadcast addresses quick check
+        if (in_array($target, ['127.0.0.1', '::1', '255.255.255.255', '0.0.0.0', '::'], true)) {
+            return true;
+        }
+
+        if (filter_var($target, FILTER_VALIDATE_IP) === false) {
             return false;
         }
 
-        $targetParts = explode('.', $target);
-        // Not a valid IPv4 address
-        if (count($targetParts) !== 4) {
-            return false;
-        }
-
-        // Broadcast range
-        if ($targetParts[0] === '0') {
-            return true;
-        }
-        // Loopback range
-        if ($targetParts[0] === '127') {
+        if (preg_match('/^(192\.0\.0|192\.0\.2|198\.51\.100|203\.0\.113)\.\d+$/', $target)) {
             return true;
         }
 
-        // LAN ranges
-        if ($targetParts[0] === '10') {
-            return true;
-        }
-        if (($targetParts[0] === '192') && ($targetParts[1] === '168')) {
-            return true;
-        }
-        if (($targetParts[0] === '169') && ($targetParts[1] === '254')) {
-            return true;
-        }
-
-        // Test Networks (examples / documentation only)
-        if (($targetParts[0] === '192') && ($targetParts[1] === '0') && ($targetParts[2] === '2')) {
-            return true;
-        }
-        if (($targetParts[1] === '198') && ($targetParts[1] === '51') && ($targetParts[2] === '100')) {
-            return true;
-        }
-        if (($targetParts[0] === '203') && ($targetParts[1] === '0') && ($targetParts[3] === '113')) {
-            return true;
-        }
-
-        return false;
+        return (filter_var($target, FILTER_VALIDATE_IP, FILTER_FLAG_NO_RES_RANGE | FILTER_FLAG_NO_PRIV_RANGE) === false);
     }
 
 
