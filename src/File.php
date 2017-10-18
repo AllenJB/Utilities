@@ -45,28 +45,27 @@ class File
     }
 
 
-    public static function bytes2human(?float $val) : ?string
+    public static function bytes2human(?float $val, int $dp = 0) : ?string
     {
         if ($val === null) {
             return null;
         }
 
         if ($val < 1024) {
-            return number_format($val) . ' bytes';
+            return number_format($val, $dp) . ' bytes';
         }
         if ($val < (1024 * 1024)) {
-            return number_format($val / 1024) . ' KB';
+            return number_format($val / 1024, $dp) . ' KB';
         }
         if ($val < (1024 * 1024 * 1024)) {
-            return number_format( $val / (1024 * 1024)) .' MB';
+            return number_format( $val / (1024 * 1024), $dp) .' MB';
         }
-        return number_format($val / (1024 * 1024 * 1024)) . ' GB';
+        return number_format($val / (1024 * 1024 * 1024), $dp) . ' GB';
     }
 
 
     /**
      * Returns the maximum file upload size (taking both upload_max_filesize and post_max_size into account) in bytes.
-     * @return int
      */
     public static function getUploadMaxFilesize() : float
     {
