@@ -133,19 +133,17 @@ class Logger
     {
         $file = '';
 
-        if (is_string($this->fileDateFormat) && (strlen($this->fileDateFormat) > 0)) {
+        if (is_string($this->fileDateFormat) && ($this->fileDateFormat !== "")) {
             $file .= date($this->fileDateFormat);
-            if (is_string($this->filePart) && (strlen($this->filePart) > 0)) {
+            if (is_string($this->filePart) && ($this->filePart !== "")) {
                 $file .= '_';
             }
         }
 
-        if (is_string($this->filePart) && (strlen($this->filePart) > 0)) {
+        if (is_string($this->filePart) && ($this->filePart !== "")) {
             $file .= $this->filePart;
-        } else {
-            if (! (is_string($this->fileDateFormat) && (strlen($this->fileDateFormat) > 0))) {
-                $file .= 'current';
-            }
+        } elseif (! (is_string($this->fileDateFormat) && ($this->fileDateFormat !== ""))) {
+            $file .= 'current';
         }
 
         $this->file = $this->directory . $file . '.log';
@@ -157,7 +155,10 @@ class Logger
         $this->directory = rtrim($dir, '/') . '/';
         if (! (file_exists($this->directory) && is_dir($this->directory))) {
             $this->log("Creating log directory: {$this->directory}", 'info');
-            mkdir($this->directory, 0775, true);
+            if ((! mkdir($this->directory, 0775, true)) && (! is_dir($this->directory))) {
+                $this->log("Failed creating directory: {$this->directory}", "error");
+                throw new \RuntimeException("Failed creating log directory: {$this->directory}");
+            }
         }
         $this->updateFilename();
         if (! defined('ERROR_HANDLER_LOG')) {
@@ -170,7 +171,7 @@ class Logger
     {
         if (! array_key_exists($level, $this->levels)) {
             throw new \InvalidArgumentException("Invalid log level specified: {$level}; Valid options are: "
-                . implode(array_keys($this->levels), ', '));
+                . implode(", ", array_keys($this->levels)));
         }
         $this->level = $this->levels[$level];
 
@@ -181,7 +182,7 @@ class Logger
 
     public function setPrefix(string $string = '') : void
     {
-        if ((strlen($string) > 0) && (substr($string, -1) !== ' ')) {
+        if (($string !== "") && (substr($string, -1) !== ' ')) {
             $string .= ' ';
         }
         $this->prefix = $string;
@@ -226,7 +227,7 @@ class Logger
 
         $levelTxt = str_pad(strtoupper($level), 5, ' ', STR_PAD_LEFT);
         $date = $this->date();
-        if (is_string($date) && (strlen($date) > 0)) {
+        if (is_string($date) && ($date !== "")) {
             $date .= ' ';
         }
         $line = "{$date}{$levelTxt} {$this->prefix}{$msg} \n";
@@ -240,11 +241,10 @@ class Logger
         }
 
         if ($this->logToDisk && is_string($this->file) && ($this->file !== "")) {
-            if (file_exists($this->file) && (! is_writable($this->file))) {
+            $bytesWritten = file_put_contents($this->file, $line, FILE_APPEND);
+            if ($bytesWritten === false) {
                 $this->logToDisk = false;
-                trigger_error("Unable to write to log file - Log to disk has been FORCE DISABLED", E_USER_NOTICE);
-            } else {
-                file_put_contents($this->file, $line, FILE_APPEND);
+                trigger_error("Failed to write to log file - Log to disk has been FORCE DISABLED", E_USER_NOTICE);
             }
         }
 
@@ -273,7 +273,7 @@ class Logger
         $dt = date_create_from_format("U.u", $ts);
         if (! is_object($dt)) {
             trigger_error(
-                "Failed to created timestamp for {$ts}: " . print_r(\DateTime::getLastErrors(), true),
+                "Failed to create timestamp for {$ts}: " . print_r(\DateTime::getLastErrors(), true),
                 E_USER_NOTICE
             );
             return date($this->lineDateFormat);
@@ -306,7 +306,7 @@ class Logger
             $this->progressLogging = true;
             $levelTxt = str_pad(strtoupper($level), 5, ' ', STR_PAD_LEFT);
             $date = $this->date();
-            if (is_string($date) && (strlen($date) > 0)) {
+            if (is_string($date) && ($date !== "")) {
                 $date .= ' ';
             }
 
