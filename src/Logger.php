@@ -1,7 +1,10 @@
 <?php
-declare(strict_types=1);
+declare(strict_types = 1);
 
 namespace AllenJB\Utilities;
+
+use Psr\Log\LoggerInterface;
+use Psr\Log\LogLevel;
 
 const CLI_NORMAL = "\033[0m";
 const CLI_BLACK = "\033[0;30m";
@@ -30,27 +33,44 @@ const CLI_BG_MAGENTA = "\033[45m";
 const CLI_BG_CYAN = "\033[46m";
 const CLI_BG_LGRAY = "\033[47m";
 
-class Logger
+class Logger implements LoggerInterface
 {
 
     /**
      * @var array All available log levels. The MUST be in order.
      * Note: Keys and values are flipped by the constructor
      */
-    protected $levels = ['debug', 'info', 'warn', 'error', 'fatal'];
+    protected $levels = [
+        LogLevel::DEBUG,
+        LogLevel::INFO,
+        LogLevel::NOTICE,
+        LogLevel::WARNING,
+        LogLevel::ERROR,
+        LogLevel::CRITICAL,
+        LogLevel::ALERT,
+        LogLevel::EMERGENCY,
+    ];
 
-    protected $levelColors = [
-        'debug' => CLI_LGRAY,
-        'info' => CLI_LGRAY,
-        'warn' => CLI_YELLOW,
-        'error' => CLI_LRED,
-        'fatal' => CLI_LRED,
+    protected static $levelAliases = [
+        "warn" => LogLevel::WARNING,
+        "fatal" => LogLevel::EMERGENCY,
+    ];
+
+    protected static $levelColors = [
+        LogLevel::DEBUG => CLI_LGRAY,
+        LogLevel::INFO => CLI_LGRAY,
+        LogLevel::NOTICE => CLI_LGRAY,
+        LogLevel::WARNING => CLI_YELLOW,
+        LogLevel::ERROR => CLI_LRED,
+        LogLevel::CRITICAL => CLI_LRED,
+        LogLevel::ALERT => CLI_LRED,
+        LogLevel::EMERGENCY => CLI_LRED,
     ];
 
     /**
      * @var int The current logging level
      */
-    protected $level = 0;
+    protected $minLevelNum = 0;
 
     /**
      * @var bool Log to the console?
@@ -142,7 +162,7 @@ class Logger
 
         if (is_string($this->filePart) && ($this->filePart !== "")) {
             $file .= $this->filePart;
-        } elseif (! (is_string($this->fileDateFormat) && ($this->fileDateFormat !== ""))) {
+        } else if (! (is_string($this->fileDateFormat) && ($this->fileDateFormat !== ""))) {
             $file .= 'current';
         }
 
@@ -154,9 +174,9 @@ class Logger
     {
         $this->directory = rtrim($dir, '/') . '/';
         if (! (file_exists($this->directory) && is_dir($this->directory))) {
-            $this->log("Creating log directory: {$this->directory}", 'info');
+            $this->info("Creating log directory: {$this->directory}");
             if ((! mkdir($this->directory, 0775, true)) && (! is_dir($this->directory))) {
-                $this->log("Failed creating directory: {$this->directory}", "error");
+                $this->error("Failed creating directory: {$this->directory}");
                 throw new \RuntimeException("Failed creating log directory: {$this->directory}");
             }
         }
@@ -173,10 +193,17 @@ class Logger
             throw new \InvalidArgumentException("Invalid log level specified: {$level}; Valid options are: "
                 . implode(", ", array_keys($this->levels)));
         }
-        $this->level = $this->levels[$level];
+        $this->minLevelNum = $this->levels[$level];
 
         $levels = array_flip($this->levels);
-        $this->log("Log Level set to: " . $levels[$this->level], 'info');
+
+        // Ensure that log level changes are always logged, regardless of the current level
+        $msgLvl = LogLevel::INFO;
+        if ($this->minLevelNum > $this->levels[$msgLvl]) {
+            $msgLvl = $levels[$this->minLevelNum];
+        }
+
+        $this->log($msgLvl, "Log Level set to: " . $levels[$this->minLevelNum]);
     }
 
 
@@ -209,23 +236,42 @@ class Logger
 
     public function init() : void
     {
-        $this->log(str_repeat('-', 80), 'info');
-        $this->log("Logging to: {$this->file}", 'info');
+        $this->info(str_repeat('-', 80));
+        $this->info("Logging to: {$this->file}");
     }
 
 
-    public function log(string $msg, string $level = 'info', bool $diskOnly = false) : void
+    /**
+     * @param string $level Level (or message for BC)
+     * @param string $msg Message (or level for BC)
+     * @param array|bool $context Context, or if boolean overrides $diskOnly (BC)
+     * @param bool $diskOnly
+     */
+    public function log($level, $msg = LogLevel::INFO, $context = [], $diskOnly = false) : void
     {
+        if (is_bool($context)) {
+            $diskOnly = $context;
+            $context = [];
+        }
+
         if ($this->progressLogging && (! $diskOnly)) {
             $this->logProgressEnd();
         }
 
+        if (array_key_exists($msg, self::$levelAliases) || array_key_exists($msg, $this->levels)) {
+            $levelTmp = $msg;
+            $msg = $level;
+            $level = $levelTmp;
+            unset($levelTmp);
+        }
+
+        $level = (self::$levelAliases[$level] ?? $level);
         $logLevel = $this->levels[$level];
-        if ($this->level > $logLevel) {
+        if ($this->minLevelNum > $logLevel) {
             return;
         }
 
-        $levelTxt = str_pad(strtoupper($level), 5, ' ', STR_PAD_LEFT);
+        $levelTxt = str_pad(strtoupper(substr($level, 0, 5)), 5, ' ', STR_PAD_LEFT);
         $date = $this->date();
         if (is_string($date) && ($date !== "")) {
             $date .= ' ';
@@ -233,7 +279,7 @@ class Logger
         $line = "{$date}{$levelTxt} {$this->prefix}{$msg} \n";
         $consoleLine = $line;
         if ($this->colorsEnabled) {
-            $consoleLine = $date . $this->levelColors[$level] . $levelTxt . CLI_NORMAL . " {$this->prefix}{$msg} \n";
+            $consoleLine = $date . self::$levelColors[$level] . $levelTxt . CLI_NORMAL . " {$this->prefix}{$msg} \n";
         }
 
         if ($this->logToMemory) {
@@ -290,30 +336,22 @@ class Logger
      * @param String $msg Message to log
      * @param string $level Log level
      */
-    public function logProgress(string $msg, string $level = 'info') : void
+    public function logProgress(string $msg, string $level = LogLevel::INFO) : void
     {
-        $logLevel = $this->levels[$level];
-        if (! array_key_exists($level, $this->levels)) {
-            trigger_error("Invalid log level specified: {$level}", E_USER_NOTICE);
-            $logLevel = $this->levels[$level];
-        }
-        if ($this->level > $logLevel) {
-            return;
-        }
-        $this->log($msg, $level, true);
+        $this->log($level, $msg, [], true);
 
         if ($this->logToConsole) {
             $this->progressLogging = true;
-            $levelTxt = str_pad(strtoupper($level), 5, ' ', STR_PAD_LEFT);
+            $levelTxt = str_pad(strtoupper(substr($level, 0, 5)), 5, ' ', STR_PAD_LEFT);
             $date = $this->date();
             if (is_string($date) && ($date !== "")) {
                 $date .= ' ';
             }
 
-            $line = $date . $this->levelColors[$level] . "{$levelTxt} {$this->prefix}{$msg} \n";
+            $line = $date . self::$levelColors[$level] . "{$levelTxt} {$this->prefix}{$msg} \n";
             $consoleLine = $line;
             if ($this->colorsEnabled) {
-                $consoleLine = $date . $this->levelColors[$level] . $levelTxt . CLI_NORMAL . " {$this->prefix}{$msg} \n";
+                $consoleLine = $date . self::$levelColors[$level] . $levelTxt . CLI_NORMAL . " {$this->prefix}{$msg} \n";
             }
 
             $line = "\r\x1B[K" . trim($consoleLine) . CLI_NORMAL;
@@ -367,7 +405,7 @@ class Logger
             $memUsageString .= "Peak Mem Usage: " . $mem . " / Real: " . $rmem;
         }
         if ($memUsageString !== "") {
-            $this->log($memUsageString);
+            $this->info($memUsageString);
         }
     }
 
@@ -382,7 +420,7 @@ class Logger
     public function isErrorLevel(string $level) : bool
     {
         $logLevel = $this->levels[$level];
-        if ($this->level > $logLevel) {
+        if ($this->minLevelNum > $logLevel) {
             trigger_error("Invalid log level: {$level}", E_USER_NOTICE);
             return false;
         }
@@ -429,6 +467,54 @@ class Logger
     public function dumpLog() : array
     {
         return $this->memlog;
+    }
+
+
+    public function alert($message, array $context = [])
+    {
+        $this->log($message, LogLevel::ALERT);
+    }
+
+
+    public function critical($message, array $context = [])
+    {
+        $this->log($message, LogLevel::CRITICAL);
+    }
+
+
+    public function debug($message, array $context = [])
+    {
+        $this->log($message, LogLevel::DEBUG);
+    }
+
+
+    public function emergency($message, array $context = [])
+    {
+        $this->log($message, LogLevel::EMERGENCY);
+    }
+
+
+    public function error($message, array $context = [])
+    {
+        $this->log($message, LogLevel::ERROR);
+    }
+
+
+    public function info($message, array $context = [])
+    {
+        $this->log($message, LogLevel::INFO);
+    }
+
+
+    public function notice($message, array $context = [])
+    {
+        $this->log($message, LogLevel::NOTICE);
+    }
+
+
+    public function warning($message, array $context = [])
+    {
+        $this->log($message, LogLevel::WARNING);
     }
 
 }
