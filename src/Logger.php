@@ -470,6 +470,12 @@ class Logger implements LoggerInterface
     }
 
 
+    public function clearMemLog(): void
+    {
+        $this->memlog = [];
+    }
+
+
     public function alert($message, array $context = [])
     {
         $this->log($message, LogLevel::ALERT);
