@@ -1,5 +1,5 @@
 <?php
-declare(strict_types = 1);
+declare(strict_types=1);
 
 namespace AllenJB\Utilities;
 
@@ -40,7 +40,7 @@ class Logger implements LoggerInterface
      * @var array All available log levels. The MUST be in order.
      * Note: Keys and values are flipped by the constructor
      */
-    protected $levels = [
+    protected array $levels = [
         LogLevel::DEBUG,
         LogLevel::INFO,
         LogLevel::NOTICE,
@@ -51,12 +51,12 @@ class Logger implements LoggerInterface
         LogLevel::EMERGENCY,
     ];
 
-    protected static $levelAliases = [
+    protected static array $levelAliases = [
         "warn" => LogLevel::WARNING,
         "fatal" => LogLevel::EMERGENCY,
     ];
 
-    protected static $levelColors = [
+    protected static array $levelColors = [
         LogLevel::DEBUG => CLI_LGRAY,
         LogLevel::INFO => CLI_LGRAY,
         LogLevel::NOTICE => CLI_LGRAY,
@@ -70,61 +70,61 @@ class Logger implements LoggerInterface
     /**
      * @var int The current logging level
      */
-    protected $minLevelNum = 0;
+    protected int $minLevelNum = 0;
 
     /**
      * @var bool Log to the console?
      */
-    protected $logToConsole = true;
+    protected bool $logToConsole = true;
 
     /**
      * @var bool Log to disk?
      */
-    protected $logToDisk = true;
+    protected bool $logToDisk = true;
 
     /**
      * @var bool Log to memory (store log for later dump)?
      */
-    protected $logToMemory = false;
+    protected bool $logToMemory = false;
 
     /**
      * @var null|string Directory to store logs in
      */
-    protected $directory = null;
+    protected ?string $directory = null;
 
     /**
      * @var string String to append to the filename
      */
-    protected $filePart = '';
+    protected string $filePart = '';
 
     /**
      * @var null|string Full filename, including path, of the file
      */
-    protected $file = null;
+    protected ?string $file = null;
 
     /**
      * @var string Prefix to append to every log line
      */
-    protected $prefix = '';
+    protected string $prefix = '';
 
     /**
      * @var string Date format used in the filename
      */
-    protected $fileDateFormat = 'Y-m-d_His';
+    protected string $fileDateFormat = 'Y-m-d_His';
 
     /**
      * @var string Date format used in log lines
      */
-    protected $lineDateFormat = 'Y-m-d H:i:s';
+    protected string $lineDateFormat = 'Y-m-d H:i:s';
 
-    protected $colorsEnabled = false;
+    protected bool $colorsEnabled = false;
 
     /**
      * @var string[] In-memory log
      */
-    protected $memlog = [];
+    protected array $memlog = [];
 
-    protected $progressLogging = false;
+    protected bool $progressLogging = false;
 
 
     public function __construct()
@@ -134,13 +134,13 @@ class Logger implements LoggerInterface
     }
 
 
-    public function setEnableColors(bool $enabled = true) : void
+    public function setEnableColors(bool $enabled = true): void
     {
         $this->colorsEnabled = $enabled;
     }
 
 
-    public function setFilePart(?string $part) : void
+    public function setFilePart(?string $part): void
     {
         $this->filePart = $part;
         if (is_string($this->directory) && ($this->directory !== "")) {
@@ -149,20 +149,20 @@ class Logger implements LoggerInterface
     }
 
 
-    protected function updateFilename() : void
+    protected function updateFilename(): void
     {
         $file = '';
 
-        if (is_string($this->fileDateFormat) && ($this->fileDateFormat !== "")) {
+        if ($this->fileDateFormat !== "") {
             $file .= date($this->fileDateFormat);
-            if (is_string($this->filePart) && ($this->filePart !== "")) {
+            if ($this->filePart !== "") {
                 $file .= '_';
             }
         }
 
-        if (is_string($this->filePart) && ($this->filePart !== "")) {
+        if ($this->filePart !== "") {
             $file .= $this->filePart;
-        } else if (! (is_string($this->fileDateFormat) && ($this->fileDateFormat !== ""))) {
+        } elseif ($this->fileDateFormat === "") {
             $file .= 'current';
         }
 
@@ -170,7 +170,7 @@ class Logger implements LoggerInterface
     }
 
 
-    public function setDirectory(string $dir) : void
+    public function setDirectory(string $dir): void
     {
         $this->directory = rtrim($dir, '/') . '/';
         if (! (file_exists($this->directory) && is_dir($this->directory))) {
@@ -187,7 +187,7 @@ class Logger implements LoggerInterface
     }
 
 
-    public function setLevel(string $level) : void
+    public function setLevel(string $level): void
     {
         if (! array_key_exists($level, $this->levels)) {
             throw new \InvalidArgumentException("Invalid log level specified: {$level}; Valid options are: "
@@ -207,7 +207,7 @@ class Logger implements LoggerInterface
     }
 
 
-    public function setPrefix(string $string = '') : void
+    public function setPrefix(string $string = ''): void
     {
         if (($string !== "") && (substr($string, -1) !== ' ')) {
             $string .= ' ';
@@ -219,7 +219,7 @@ class Logger implements LoggerInterface
     /**
      * @param string|null $format
      */
-    public function setFileDateFormat(?string $format) : void
+    public function setFileDateFormat(?string $format): void
     {
         $this->fileDateFormat = $format;
         if (is_string($this->directory) && ($this->directory !== "")) {
@@ -228,13 +228,13 @@ class Logger implements LoggerInterface
     }
 
 
-    public function setLineDateFormat(string $format) : void
+    public function setLineDateFormat(string $format): void
     {
         $this->lineDateFormat = $format;
     }
 
 
-    public function init() : void
+    public function init(): void
     {
         $this->info(str_repeat('-', 80));
         $this->info("Logging to: {$this->file}");
@@ -247,7 +247,7 @@ class Logger implements LoggerInterface
      * @param array|bool $context Context, or if boolean overrides $diskOnly (BC)
      * @param bool $diskOnly
      */
-    public function log($level, $msg = LogLevel::INFO, $context = [], $diskOnly = false) : void
+    public function log($level, $msg = LogLevel::INFO, $context = [], $diskOnly = false): void
     {
         if (is_bool($context)) {
             $diskOnly = $context;
@@ -273,7 +273,7 @@ class Logger implements LoggerInterface
 
         $levelTxt = str_pad(strtoupper(substr($level, 0, 5)), 5, ' ', STR_PAD_LEFT);
         $date = $this->date();
-        if (is_string($date) && ($date !== "")) {
+        if ($date !== "") {
             $date .= ' ';
         }
         $line = "{$date}{$levelTxt} {$this->prefix}{$msg} \n";
@@ -313,7 +313,7 @@ class Logger implements LoggerInterface
      *
      * @return bool|string
      */
-    protected function date() : string
+    protected function date(): string
     {
         $ts = number_format(microtime(true), 6, '.', '');
         $dt = date_create_from_format("U.u", $ts);
@@ -336,7 +336,7 @@ class Logger implements LoggerInterface
      * @param String $msg Message to log
      * @param string $level Log level
      */
-    public function logProgress(string $msg, string $level = LogLevel::INFO) : void
+    public function logProgress(string $msg, string $level = LogLevel::INFO): void
     {
         $this->log($level, $msg, [], true);
 
@@ -344,7 +344,7 @@ class Logger implements LoggerInterface
             $this->progressLogging = true;
             $levelTxt = str_pad(strtoupper(substr($level, 0, 5)), 5, ' ', STR_PAD_LEFT);
             $date = $this->date();
-            if (is_string($date) && ($date !== "")) {
+            if ($date !== "") {
                 $date .= ' ';
             }
 
@@ -363,7 +363,7 @@ class Logger implements LoggerInterface
     /**
      * End a section of progress log messages (move to next console line)
      */
-    public function logProgressEnd() : void
+    public function logProgressEnd(): void
     {
         if ($this->logToConsole) {
             print "\n";
@@ -372,12 +372,12 @@ class Logger implements LoggerInterface
     }
 
 
-    protected function bytes_to_human(int $bytes) : string
+    protected function bytes_to_human(int $bytes): string
     {
         $human = null;
         if ($bytes < 1024) {
             $human = number_format($bytes, 0) . ' bytes';
-        } else if ($bytes < 1024 * 1024) {
+        } elseif ($bytes < 1024 * 1024) {
             $human = number_format(($bytes / 1024), 1) . ' KB';
         } else {
             $human = number_format(($bytes / (1024 * 1024)), 1) . ' MB';
@@ -386,9 +386,8 @@ class Logger implements LoggerInterface
     }
 
 
-    public function logMemoryUsage() : void
+    public function logMemoryUsage(): void
     {
-
         $memUsageString = "";
         if (function_exists('memory_get_usage')) {
             $mem = memory_get_usage();
@@ -417,7 +416,7 @@ class Logger implements LoggerInterface
      * @param string $level Error level to check
      * @return bool
      */
-    public function isErrorLevel(string $level) : bool
+    public function isErrorLevel(string $level): bool
     {
         $logLevel = $this->levels[$level];
         if ($this->minLevelNum > $logLevel) {
@@ -429,7 +428,7 @@ class Logger implements LoggerInterface
     }
 
 
-    public function compress() : ?string
+    public function compress(): ?string
     {
         if ($this->file === null) {
             return null;
@@ -440,31 +439,31 @@ class Logger implements LoggerInterface
     }
 
 
-    public function getFile() : ?string
+    public function getFile(): ?string
     {
         return $this->file;
     }
 
 
-    public function setLogToConsole(bool $enabled = true) : void
+    public function setLogToConsole(bool $enabled = true): void
     {
         $this->logToConsole = $enabled;
     }
 
 
-    public function setLogToDisk(bool $enabled = true) : void
+    public function setLogToDisk(bool $enabled = true): void
     {
         $this->logToDisk = $enabled;
     }
 
 
-    public function setLogToMemory(bool $enabled = true) : void
+    public function setLogToMemory(bool $enabled = true): void
     {
         $this->logToMemory = $enabled;
     }
 
 
-    public function dumpLog() : array
+    public function dumpLog(): array
     {
         return $this->memlog;
     }
@@ -476,49 +475,49 @@ class Logger implements LoggerInterface
     }
 
 
-    public function alert($message, array $context = [])
+    public function alert($message, array $context = []): void
     {
         $this->log($message, LogLevel::ALERT);
     }
 
 
-    public function critical($message, array $context = [])
+    public function critical($message, array $context = []): void
     {
         $this->log($message, LogLevel::CRITICAL);
     }
 
 
-    public function debug($message, array $context = [])
+    public function debug($message, array $context = []): void
     {
         $this->log($message, LogLevel::DEBUG);
     }
 
 
-    public function emergency($message, array $context = [])
+    public function emergency($message, array $context = []): void
     {
         $this->log($message, LogLevel::EMERGENCY);
     }
 
 
-    public function error($message, array $context = [])
+    public function error($message, array $context = []): void
     {
         $this->log($message, LogLevel::ERROR);
     }
 
 
-    public function info($message, array $context = [])
+    public function info($message, array $context = []): void
     {
         $this->log($message, LogLevel::INFO);
     }
 
 
-    public function notice($message, array $context = [])
+    public function notice($message, array $context = []): void
     {
         $this->log($message, LogLevel::NOTICE);
     }
 
 
-    public function warning($message, array $context = [])
+    public function warning($message, array $context = []): void
     {
         $this->log($message, LogLevel::WARNING);
     }

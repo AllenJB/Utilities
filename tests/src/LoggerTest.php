@@ -21,10 +21,10 @@ class LoggerTest extends TestCase
         $logger->log("fatal", "test");
 
         $logEntries = $logger->dumpLog();
-        $this->assertRegExp("/^[0-9\-\:\s]+INFO test\s*$/", array_shift($logEntries));
-        $this->assertRegExp("/^[0-9\-\:\s]+INFO test\s*$/", array_shift($logEntries));
-        $this->assertRegExp("/^[0-9\-\:\s]+WARNI test\s*$/", array_shift($logEntries));
-        $this->assertRegExp("/^[0-9\-\:\s]+EMERG test\s*$/", array_shift($logEntries));
+        $this->assertMatchesRegularExpression("/^[0-9\-\:\s]+INFO test\s*$/", array_shift($logEntries));
+        $this->assertMatchesRegularExpression("/^[0-9\-\:\s]+INFO test\s*$/", array_shift($logEntries));
+        $this->assertMatchesRegularExpression("/^[0-9\-\:\s]+WARNI test\s*$/", array_shift($logEntries));
+        $this->assertMatchesRegularExpression("/^[0-9\-\:\s]+EMERG test\s*$/", array_shift($logEntries));
         $this->assertCount(0, $logEntries);
     }
 
