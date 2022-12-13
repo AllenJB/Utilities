@@ -13,10 +13,6 @@ class IteratorGauge
 
     protected $lineNo = -1;
 
-    protected $lastError = null;
-
-    protected $curLine = null;
-
     protected $tsStart = null;
 
 
