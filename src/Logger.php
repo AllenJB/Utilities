@@ -142,7 +142,7 @@ class Logger implements LoggerInterface
 
     public function setFilePart(?string $part): void
     {
-        $this->filePart = $part;
+        $this->filePart = ($part ?? '');
         if (is_string($this->directory) && ($this->directory !== "")) {
             $this->updateFilename();
         }
