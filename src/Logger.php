@@ -221,7 +221,7 @@ class Logger implements LoggerInterface
      */
     public function setFileDateFormat(?string $format): void
     {
-        $this->fileDateFormat = $format;
+        $this->fileDateFormat = ($format ?? '');
         if (is_string($this->directory) && ($this->directory !== "")) {
             $this->updateFilename();
         }
