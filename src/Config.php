@@ -48,6 +48,15 @@ class Config
     }
 
 
+    public function getOrDefault(string $key, $default)
+    {
+        if (! array_key_exists($key, $this->config)) {
+            return $default;
+        }
+        return $this->config[$key];
+    }
+
+
     public function all() : array
     {
         return $this->config;
